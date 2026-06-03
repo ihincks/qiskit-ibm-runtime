@@ -22,7 +22,7 @@ from ibm_quantum_schemas.common import (
     F64TensorModel,
     PauliLindbladMapModel,
     QpyDataV13ToV17Model,
-    SamplexModelSSV1ToSSV3,
+    SamplexModel,
     TensorModel,
 )
 from ibm_quantum_schemas.executor.version_1_0 import (
@@ -31,7 +31,10 @@ from ibm_quantum_schemas.executor.version_1_0 import (
     QuantumProgramModel,
     SamplexItemModel,
 )
-from samplomatic.tensor_interface import PauliLindbladMapSpecification, TensorSpecification
+from samplomatic.tensor_interface import (
+    PauliLindbladMapSpecification,
+    TensorSpecification,
+)
 
 from ...options_models.executor_options import ExecutorOptions
 from ...utils.utils import get_qpy_version, get_ssv_version
@@ -40,8 +43,14 @@ from ..quantum_program import CircuitItem, QuantumProgram, SamplexItem
 if TYPE_CHECKING:
     from qiskit.circuit import QuantumCircuit
 
+# hack: allow any SSV>=1 version by switching SamplexModelSSV1ToSSV3 -> SamplexModel
+SamplexItemModel.model_fields["samplex"].annotation = SamplexModel
+SamplexItemModel.model_rebuild(force=True)
 
-def quantum_program_from_1_0(model: ParamsModel) -> tuple[QuantumProgram, ExecutorOptions]:
+
+def quantum_program_from_1_0(
+    model: ParamsModel,
+) -> tuple[QuantumProgram, ExecutorOptions]:
     """Convert a V1.0 model to a pair of program and options."""
     program_model = model.quantum_program
     circuits: list[QuantumCircuit] = program_model.circuits.to_python(use_cached=True)
@@ -122,7 +131,7 @@ def quantum_program_to_1_0(program: QuantumProgram, options: ExecutorOptions) ->
                     else:
                         arguments[name] = value
             model_item = SamplexItemModel(
-                samplex=SamplexModelSSV1ToSSV3.from_samplex(item.samplex, ssv=get_ssv_version(3)),
+                samplex=SamplexModel.from_samplex(item.samplex, ssv=get_ssv_version(4)),
                 samplex_arguments=arguments,
                 shape=item.shape,
                 chunk_size=chunk_size,
