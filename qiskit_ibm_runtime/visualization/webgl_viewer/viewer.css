@@ -1,0 +1,501 @@
+/* This code is part of Qiskit.
+ *
+ * (C) Copyright IBM 2025-2026.
+ *
+ * This code is licensed under the Apache License, Version 2.0. You may
+ * obtain a copy of this license in the LICENSE.txt file in the root directory
+ * of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * Any modifications or derivative works of this code must retain this
+ * copyright notice, and modified files need to carry a notice indicating
+ * that they have been altered from the originals.
+ */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  background: #f7f7f7;
+  color: #222;
+}
+
+/* ============================================================
+   Top-level layout
+   ============================================================ */
+#app {
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Left column: stacks minimap + resize handle + main canvas. */
+#left-column {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Minimap strip */
+#minimap-area {
+  flex-shrink: 0;
+  padding: 0;
+  background: #fff;
+}
+
+#mm-canvas {
+  display: block;
+  width: 100%;
+  cursor: crosshair;
+  border-radius: 3px;
+}
+
+/* Draggable divider between minimap and main plot. The border-bottom that
+   used to live on #minimap-area moved here so the visible line sits on the
+   grab target. */
+#mm-resize-handle {
+  flex-shrink: 0;
+  height: 6px;
+  cursor: row-resize;
+  background: transparent;
+  border-bottom: 1px solid #ddd;
+  transition: background 120ms ease;
+}
+#mm-resize-handle:hover,
+#mm-resize-handle.dragging {
+  background: #eaeaea;
+}
+
+/* Canvas container: takes all remaining width, stacks the two canvases.
+   No CSS scrollbars — all navigation is via viewport pan/zoom in JS. */
+#canvas-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  background: #fff;
+}
+
+/* WebGL2 main canvas — normal flow so it drives the container's scroll height */
+#gl-canvas {
+  display: block;
+  position: relative;
+}
+
+/* 2D overlay sits on top of the WebGL canvas, does NOT participate in scroll */
+#overlay-canvas {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;  /* interactions go to gl-canvas below */
+  background: transparent;
+}
+
+/* ============================================================
+   Sidebar
+   ============================================================ */
+#sidebar {
+  width: 230px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  background: #fafafa;
+  border-left: 1px solid #ddd;
+  padding: 6px 8px 16px 8px;
+}
+
+.sb-section {
+  margin-bottom: 12px;
+}
+
+.sb-title {
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #666;
+  padding: 6px 0 3px 0;
+  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 4px;
+}
+
+.sb-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 3px;
+  border-radius: 3px;
+  line-height: 1.4;
+  font-size: 12px;
+}
+
+.sb-clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sb-clickable:hover {
+  background: #ececec;
+}
+
+.sb-check {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sb-check:hover {
+  background: #ececec;
+}
+
+.sb-check input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+  accent-color: #636EFA;
+}
+
+.swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid rgba(0,0,0,0.18);
+  flex-shrink: 0;
+}
+
+/* Filter toggle buttons */
+.toggle-btn {
+  display: block;
+  width: 100%;
+  margin: 3px 0;
+  padding: 4px 8px;
+  font-size: 11px;
+  text-align: left;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  color: #444;
+  transition: background 0.12s;
+}
+
+.toggle-btn:hover {
+  background: #ececec;
+}
+
+.toggle-btn.active {
+  background: #636EFA;
+  color: #fff;
+  border-color: #4a56d0;
+}
+
+/* Search */
+.search-input {
+  width: 100%;
+  padding: 4px 7px;
+  font-size: 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  outline: none;
+  margin-bottom: 3px;
+}
+
+.search-input:focus {
+  border-color: #636EFA;
+  box-shadow: 0 0 0 2px rgba(99,110,250,0.18);
+}
+
+.search-status {
+  font-size: 11px;
+  color: #888;
+  padding: 1px 2px;
+  min-height: 16px;
+}
+
+/* ============================================================
+   Collapsible channel group sections
+   ============================================================ */
+.sb-section-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #666;
+  padding: 6px 0 3px 0;
+  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 4px;
+}
+
+.sb-section-header:hover {
+  color: #333;
+}
+
+.sb-section-title {
+  flex: 1;
+}
+
+.sb-chevron {
+  font-size: 8px;
+  line-height: 1;
+  flex-shrink: 0;
+  color: #888;
+}
+
+.sb-master-check {
+  margin: 0;
+  cursor: pointer;
+  accent-color: #636EFA;
+  flex-shrink: 0;
+}
+
+.sb-section-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.18s ease;
+}
+
+.sb-section-body.expanded {
+  max-height: 8000px;
+}
+
+/* ============================================================
+   Solo gate indicator
+   ============================================================ */
+.sb-row.solo {
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ============================================================
+   Source editor
+   ============================================================ */
+.source-editor {
+  display: block;
+  width: 100%;
+  height: 96px;
+  font-family: monospace;
+  font-size: 11px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 4px 5px;
+  resize: vertical;
+  background: #fafafa;
+  color: #333;
+  margin-bottom: 4px;
+  overflow: auto;
+}
+
+.source-editor:focus {
+  outline: none;
+  border-color: #636EFA;
+  box-shadow: 0 0 0 2px rgba(99,110,250,0.15);
+}
+
+.source-btn-row {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.source-btn {
+  flex: 1;
+  padding: 3px 6px;
+  font-size: 11px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.source-btn-apply {
+  background: #636EFA;
+  color: #fff;
+  border-color: #4a56d0;
+}
+
+.source-btn-apply:hover {
+  background: #4a56d0;
+}
+
+.source-btn-revert {
+  background: #fff;
+  color: #444;
+}
+
+.source-btn-revert:hover {
+  background: #ececec;
+}
+
+.source-error {
+  font-size: 11px;
+  color: #cc3333;
+  word-break: break-all;
+  min-height: 0;
+}
+
+/* Reset view */
+.reset-btn {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 5px 8px;
+  font-size: 12px;
+  text-align: center;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  color: #444;
+}
+
+.reset-btn:hover {
+  background: #ececec;
+}
+
+/* ============================================================
+   Tooltip
+   ============================================================ */
+#tooltip {
+  position: fixed;
+  display: none;
+  pointer-events: none;
+  background: rgba(30, 30, 30, 0.92);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 6px 10px;
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  z-index: 1000;
+  max-width: 260px;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   Paste / drop area (standalone use)
+   ============================================================ */
+#paste-area {
+  display: none;   /* JS shows this when there's no embedded data */
+  position: absolute;
+  inset: 0;
+  padding: 32px;
+  text-align: center;
+  z-index: 50;
+  background: #fff;
+}
+
+#paste-area.dragover {
+  background: #eef4ff;
+  outline: 2px dashed #636EFA;
+  outline-offset: -12px;
+}
+
+#paste-area .pa-icon {
+  font-size: 40px;
+  color: #aaa;
+}
+
+#paste-area h2 {
+  margin: 6px 0 4px 0;
+  color: #444;
+  font-weight: 500;
+}
+
+#paste-area p {
+  color: #666;
+  margin: 4px 0;
+}
+
+#paste-area textarea {
+  width: min(720px, 92%);
+  height: 220px;
+  margin-top: 12px;
+  font-family: monospace;
+  font-size: 12px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  resize: vertical;
+}
+
+#paste-area textarea:focus {
+  outline: none;
+  border-color: #636EFA;
+  box-shadow: 0 0 0 2px rgba(99,110,250,0.18);
+}
+
+/* ============================================================
+   WebGL error banner (shown when context unavailable)
+   ============================================================ */
+#gl-error-banner {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: #fff8e1;
+  border: 2px solid #f9a825;
+  border-radius: 6px;
+  margin: 32px;
+  padding: 32px;
+  text-align: center;
+  z-index: 200;
+}
+
+#gl-error-banner h2 {
+  color: #e65100;
+  margin-top: 0;
+}
+
+#gl-error-banner p {
+  color: #444;
+  font-size: 13px;
+}
+
+/* ============================================================
+   Shortcuts keyboard-chord list
+   ============================================================ */
+.shortcuts-list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 8px;
+  font-size: 11px;
+  line-height: 1.4;
+  margin: 2px 0 4px 0;
+  padding: 0;
+}
+
+.shortcuts-list dt {
+  font-weight: 600;
+  color: #555;
+  white-space: nowrap;
+}
+
+.shortcuts-list dd {
+  color: #888;
+  margin: 0;
+}
+
+/* ============================================================
+   Source-apply success flash
+   ============================================================ */
+.source-applied-flag {
+  display: inline-block;
+  background: #22aa44;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-left: 5px;
+  vertical-align: middle;
+}

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<!-- This code is part of Qiskit.
+   (C) Copyright IBM 2025-2026.
+   Licensed under the Apache License, Version 2.0.
+   See LICENSE.txt in the root directory of this source tree. -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Circuit Schedule Timing Viewer (WebGL2)</title>
+
+  <!--
+    Slots injected by the Python bridge
+    (draw_circuit_schedule_timing_webgl):
+
+      __STYLE_SLOT__  → inlined viewer.css
+      __DATA_SLOT__   → window.__CIRCUIT_SCHEDULE_TIMING__ = "...";
+                        window.__CIRCUIT_SCHEDULE_OPTIONS__ = {...};
+      __SCRIPT_SLOT__ → inlined viewer.js
+
+    WebGL2 is required. An error banner is shown when unavailable.
+  -->
+
+  __STYLE_SLOT__
+  __DATA_SLOT__
+</head>
+<body>
+
+<div id="app">
+
+  <!-- Left column: minimap on top, main plot below.
+       Sits next to the sidebar (which spans the full browser height). -->
+  <div id="left-column">
+
+    <!-- Minimap strip: single Canvas 2D (rects + viewport indicator) -->
+    <div id="minimap-area">
+      <canvas id="mm-canvas" height="50"
+              title="Overview — click or drag to navigate"></canvas>
+    </div>
+
+    <!-- Drag handle to resize the minimap vertically -->
+    <div id="mm-resize-handle" role="separator" aria-orientation="horizontal"
+         title="Drag to resize the overview"></div>
+
+    <!-- Canvas container. Y-panning happens in the JS viewport, not CSS. -->
+    <div id="canvas-container">
+
+      <!-- Paste / drop area shown when no data is embedded (standalone use) -->
+      <div id="paste-area">
+        <div class="pa-icon">&#9203;</div>
+        <h2>Circuit Schedule Timing Viewer (WebGL2)</h2>
+        <p>Paste your timing CSV below, or drag &amp; drop a .txt / .csv file onto this area.</p>
+        <textarea
+          placeholder="main,reset_0,Qubit 0,7,64,play&#10;main,reset_0,Qubit 0,71,108,play&#10;..."
+          spellcheck="false"
+          autocomplete="off"
+          autocorrect="off"
+        ></textarea>
+        <p style="font-size:11px;color:#aaa;">
+          Format: Branch, Instruction, Channel, Start, Duration, Pulse
+        </p>
+      </div>
+
+      <!-- WebGL2 canvas for instanced shape drawing -->
+      <canvas id="gl-canvas"
+              title="Wheel = zoom X · Shift+Wheel = zoom Y · Drag horizontally = X slice · Drag vertically = Y slice · Drag diagonally = 2D box · Shift+Drag = pan X+Y · Dbl-click = reset"></canvas>
+
+      <!-- 2D overlay for axes, labels, tooltip positioning, selection band, highlights -->
+      <canvas id="overlay-canvas"></canvas>
+
+    </div>
+
+  </div><!-- #left-column -->
+
+  <!-- Sidebar (DOM UI) — spans full browser height. -->
+  <aside id="sidebar"></aside>
+
+</div><!-- #app -->
+
+<!-- Floating tooltip -->
+<div id="tooltip"></div>
+
+__SCRIPT_SLOT__
+
+</body>
+</html>
