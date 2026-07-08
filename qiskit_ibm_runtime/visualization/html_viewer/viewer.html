@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<!-- This code is part of Qiskit.
+   (C) Copyright IBM 2025-2026.
+   Licensed under the Apache License, Version 2.0.
+   See LICENSE.txt in the root directory of this source tree. -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Circuit Schedule Timing Viewer</title>
+
+  <!--
+    Slots injected by the Python bridge
+    (draw_circuit_schedule_timing_html):
+
+      __STYLE_SLOT__  → inlined viewer.css
+      __DATA_SLOT__   → window.__CIRCUIT_SCHEDULE_TIMING__ = "...";
+                        window.__CIRCUIT_SCHEDULE_OPTIONS__ = {...};
+      __SCRIPT_SLOT__ → inlined viewer.js
+
+    When used standalone (opened directly as a file) all three slots are
+    absent and the user drops/pastes the CSV via the paste-area.
+  -->
+
+  __STYLE_SLOT__
+  __DATA_SLOT__
+</head>
+<body>
+
+<div id="app">
+
+  <!-- Minimap strip -->
+  <div id="minimap-area">
+    <canvas id="mm-canvas" height="50"
+            title="Overview — click or drag to navigate"></canvas>
+  </div>
+
+  <!-- Main content row: canvas + sidebar -->
+  <div id="main-row">
+
+    <!-- Canvas container (scrollable if many channels) -->
+    <div id="canvas-container" style="position:relative;">
+
+      <!-- Paste / drop area shown when no data is loaded -->
+      <div id="paste-area">
+        <div class="pa-icon">⏱</div>
+        <h2>Circuit Schedule Timing Viewer</h2>
+        <p>Paste your timing CSV below, or drag &amp; drop a .txt / .csv file onto this area.</p>
+        <textarea
+          placeholder="main,reset_0,Qubit 0,7,64,play&#10;main,reset_0,Qubit 0,71,108,play&#10;..."
+          spellcheck="false"
+          autocomplete="off"
+          autocorrect="off"
+        ></textarea>
+        <p style="font-size:11px;color:#aaa;">
+          Format: Branch, Instruction, Channel, Start, Duration, Pulse
+        </p>
+      </div>
+
+      <canvas id="main-canvas"
+              title="Wheel = zoom X · Shift+Wheel = zoom Y · Drag = pan · Dbl-click = reset"></canvas>
+    </div>
+
+    <!-- Sidebar -->
+    <div id="sidebar"></div>
+
+  </div><!-- #main-row -->
+
+</div><!-- #app -->
+
+<!-- Floating tooltip -->
+<div id="tooltip"></div>
+
+__SCRIPT_SLOT__
+
+</body>
+</html>
