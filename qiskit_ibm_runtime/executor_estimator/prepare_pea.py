@@ -128,8 +128,8 @@ def prepare_pea(
 
         # Prepare samplex_arguments
         flat_parameter_values, change_basis, param_basis_pairs = compute_samplex_arguments(pub)
-        # make parameters array broadcastable with the noise scales
-        flat_parameter_values = np.expand_dims(flat_parameter_values, 0)
+        # make parameters array broadcastable with (noise_factors, randomizations, configs)
+        flat_parameter_values = flat_parameter_values[np.newaxis, np.newaxis, :]
         samplex_arguments = make_samplex_arguments(
             samplex, boxed_circuit, flat_parameter_values, change_basis
         )
@@ -138,8 +138,8 @@ def prepare_pea(
 
         # Subtract 1 from noise_factors, since a value of 1 represents the noise
         # that is present in the circuit in the absence of amplification.
-        # Also, make noise_scales broadcastable with the parameters.
-        noise_scales = np.expand_dims(np.array(noise_factors) - 1, -1)
+        # Also, make noise_scales broadcastable with (noise_factors, randomizations, configs).
+        noise_scales = (np.array(noise_factors) - 1)[:, np.newaxis, np.newaxis]
 
         # Create a noise model map containing only the layers relevant for the current pub
         specs = samplex.inputs().get_specs("pauli_lindblad_maps")
@@ -195,14 +195,9 @@ def prepare_pea(
 
     # Add TREX calibration circuit
     if measure_noise_learning is not None:
-        if (
-            isinstance(measure_noise_learning.shots_per_randomization, int)
-            and measure_noise_learning.shots_per_randomization != shots_per_randomization
-        ):
-            raise IBMInputValueError(
-                "shots_per_randomization must be the same for twirling and measure_noise_learning"
-            )
-        trex_item = create_trex_calibration_circuit(pubs, measure_noise_learning)
+        trex_item = create_trex_calibration_circuit(
+            pubs, measure_noise_learning, program_shots=shots_per_randomization
+        )
         quantum_program.items.append(trex_item)
         passthrough_data["post_processor"]["measure_mitigation"] = "True"
 

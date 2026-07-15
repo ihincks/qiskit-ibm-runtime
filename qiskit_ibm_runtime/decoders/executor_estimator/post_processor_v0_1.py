@@ -580,7 +580,9 @@ def _process_expectation_values_pea(
     if "measurement_flips._meas" in item_result:
         data ^= item_result["measurement_flips._meas"]
 
-    if isinstance(extrapolated_noise_factors, (float, int)):
+    if extrapolated_noise_factors == "auto":
+        extrapolated_noise_factors = [0, *noise_factors]
+    elif isinstance(extrapolated_noise_factors, (float, int)):
         extrapolated_noise_factors = [extrapolated_noise_factors]
 
     return calculate_extrapolated_expectation_values(

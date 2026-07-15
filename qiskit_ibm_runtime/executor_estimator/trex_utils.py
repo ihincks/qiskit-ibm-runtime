@@ -31,7 +31,9 @@ from ..quantum_program.quantum_program import SamplexItem
 
 
 def create_trex_calibration_circuit(
-    pubs: Sequence[EstimatorPub], measure_noise_learning: MeasureNoiseLearningOptions
+    pubs: Sequence[EstimatorPub],
+    measure_noise_learning: MeasureNoiseLearningOptions,
+    program_shots: int,
 ) -> SamplexItem:
     """Creates a TREX calibration circuit.
 
@@ -40,6 +42,11 @@ def create_trex_calibration_circuit(
     Args:
         pubs: List of estimator pubs to extract relevant qubits from.
         measure_noise_learning: Measure noise learning options.
+        program_shots: The shots per execution used by the enclosing ``QuantumProgram``.
+            Used to compensate when ``measure_noise_learning.shots_per_randomization`` differs
+            from ``program_shots``: a dummy inner shape axis of
+            ``round(trex_spr / program_shots)`` is added so that each TREX randomization
+            accumulates the requested number of shots.
 
     Returns:
         Samplex item containing calibration circuit for TREX factors calculation.
@@ -59,10 +66,22 @@ def create_trex_calibration_circuit(
     )
     annotated_trex_circuit = boxing_pm.run(trex_circuit)
     template_trex_circuit, trex_samplex = build(annotated_trex_circuit)
+
+    trex_spr = measure_noise_learning.shots_per_randomization
+    if trex_spr == "auto" or trex_spr == program_shots:
+        extra_factor = 1
+    else:
+        extra_factor = round(trex_spr / program_shots)
+
+    shape: tuple[int, ...] = (
+        (measure_noise_learning.num_randomizations, extra_factor)
+        if extra_factor > 1
+        else (measure_noise_learning.num_randomizations,)
+    )
     trex_calibration_item = SamplexItem(
         circuit=template_trex_circuit,
         samplex=trex_samplex,
-        shape=(measure_noise_learning.num_randomizations,),
+        shape=shape,
     )
 
     return trex_calibration_item
